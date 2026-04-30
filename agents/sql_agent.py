@@ -41,6 +41,12 @@ Rules:
     )
     return response.choices[0].message.content.strip()
 
+# ***********************************************************
+# ***********************************************************
+# One shot to LLM calls below: 
+# First LLM call — generated the SQL query
+# Second LLM call — explained the results in plain English
+
 # Run the SQL and return results
 def run_sql(conn, sql):
     try:
@@ -48,6 +54,32 @@ def run_sql(conn, sql):
         return result, None
     except Exception as e:
         return None, str(e)
+    
+# Added Explain Results so explain it in plain English
+def explain_results(question, sql, results):
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a helpful data analyst. Explain query results in clear, concise plain English. Be specific with numbers. Keep it to 2-3 sentences."
+            },
+            {
+                "role": "user",
+                "content": f"""Question asked: {question}
+                
+SQL that was run: {sql}
+
+Results: {results}
+
+Please explain these results clearly."""
+            }
+        ]
+    )
+    return response.choices[0].message.content.strip()
+# ***********************************************************
+# ***********************************************************
+
 
 # Main function that puts it all together
 def ask(question):
@@ -69,13 +101,23 @@ def ask(question):
     # Run the SQL
     result, error = run_sql(conn, sql)
     
+    # if error:
+    #     print(f"Error: {error}")
+    # else:
+    #     print(f"\nResult:")
+    #     print(result.to_string(index=False))
+
     if error:
         print(f"Error: {error}")
     else:
         print(f"\nResult:")
         print(result.to_string(index=False))
+        
+        # New: explain the results in plain English
+        explanation = explain_results(question, sql, result.to_string(index=False))
+        print(f"\nInsight: {explanation}")
 
-# Test it
+# Test
 if __name__ == "__main__":
     # ask("Which country has the most orders?")
     # ask("What are the top 3 most expensive products?")
