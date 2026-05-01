@@ -43,7 +43,7 @@ Rules:
 
 # ***********************************************************
 # ***********************************************************
-# One shot to LLM calls below: 
+# One shot two LLM calls below: 
 # First LLM call — generated the SQL query
 # Second LLM call — explained the results in plain English
 
