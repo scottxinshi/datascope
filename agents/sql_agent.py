@@ -9,11 +9,20 @@ load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # Load CSV files into DuckDB as tables
+
+# relative path fixed on 2026-05-04
+# def load_data():
+#     conn = duckdb.connect()
+#     conn.execute("CREATE TABLE orders AS SELECT * FROM read_csv_auto('data/orders.csv')")
+#     conn.execute("CREATE TABLE products AS SELECT * FROM read_csv_auto('data/products.csv')")
+#     conn.execute("CREATE TABLE customers AS SELECT * FROM read_csv_auto('data/customers.csv')")
+#     return conn
 def load_data():
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     conn = duckdb.connect()
-    conn.execute("CREATE TABLE orders AS SELECT * FROM read_csv_auto('data/orders.csv')")
-    conn.execute("CREATE TABLE products AS SELECT * FROM read_csv_auto('data/products.csv')")
-    conn.execute("CREATE TABLE customers AS SELECT * FROM read_csv_auto('data/customers.csv')")
+    conn.execute(f"CREATE TABLE orders AS SELECT * FROM read_csv_auto('{BASE_DIR}/data/orders.csv')")
+    conn.execute(f"CREATE TABLE products AS SELECT * FROM read_csv_auto('{BASE_DIR}/data/products.csv')")
+    conn.execute(f"CREATE TABLE customers AS SELECT * FROM read_csv_auto('{BASE_DIR}/data/customers.csv')")
     return conn
 
 # Ask the LLM to generate SQL for a question
@@ -82,41 +91,35 @@ Please explain these results clearly."""
 
 
 # Main function that puts it all together
-def ask(question):
-    # Load data
+def ask(question, silent=False):
     conn = load_data()
     
-    # Describe the schema so the LLM knows what tables/columns exist
     schema = """
     orders(orderID, customerID, employeeID, orderDate, requiredDate, shippedDate, shipVia, freight, shipName, shipAddress, shipCity, shipRegion, shipPostalCode, shipCountry)
     products(productID, productName, supplierID, categoryID, quantityPerUnit, unitPrice, unitsInStock, unitsOnOrder, reorderLevel, discontinued)
     customers(customerID, companyName, contactName, contactTitle, address, city, region, postalCode, country, phone, fax)
     """
     
-    # Generate SQL from the question
-    print(f"\nQuestion: {question}")
+    if not silent:
+        print(f"\nQuestion: {question}")
     sql = generate_sql(question, schema)
-    print(f"Generated SQL: {sql}")
+    if not silent:
+        print(f"Generated SQL: {sql}")
     
-    # Run the SQL
     result, error = run_sql(conn, sql)
-    
-    # if error:
-    #     print(f"Error: {error}")
-    # else:
-    #     print(f"\nResult:")
-    #     print(result.to_string(index=False))
 
     if error:
-        print(f"Error: {error}")
-        return f"Sorry, I couldn't run that query. Error: {error}" # added on 2026-05-04 to avoid "NoneType"
+        if not silent:
+            print(f"Error: {error}")
+        return f"Sorry, I couldn't run that query. Error: {error}"
     else:
-        print(f"\nResult:")
-        print(result.to_string(index=False))
+        if not silent:
+            print(f"\nResult:")
+            print(result.to_string(index=False))
         
-        # New: explain the results in plain English
         explanation = explain_results(question, sql, result.to_string(index=False))
-        print(f"\nInsight: {explanation}")
+        if not silent:
+            print(f"\nInsight: {explanation}")
         return explanation  # added on 2026-05-04 to avoid "NoneType"
 
 # Test
