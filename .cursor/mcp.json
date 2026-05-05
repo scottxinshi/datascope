@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "datascope": {
+      "command": "/Users/scott_shi/datascope/.venv/bin/python3",
+      "args": ["/Users/scott_shi/datascope/mcp_server.py"]
+    }
+  }
+}
