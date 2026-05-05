@@ -109,6 +109,7 @@ def ask(question):
 
     if error:
         print(f"Error: {error}")
+        return f"Sorry, I couldn't run that query. Error: {error}" # added on 2026-05-04 to avoid "NoneType"
     else:
         print(f"\nResult:")
         print(result.to_string(index=False))
@@ -116,6 +117,7 @@ def ask(question):
         # New: explain the results in plain English
         explanation = explain_results(question, sql, result.to_string(index=False))
         print(f"\nInsight: {explanation}")
+        return explanation  # added on 2026-05-04 to avoid "NoneType"
 
 # Test
 if __name__ == "__main__":
