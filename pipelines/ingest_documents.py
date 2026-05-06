@@ -1,61 +1,102 @@
 import os
 import chromadb
-from chromadb.utils import embedding_functions
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 
-# Use ChromaDB's built-in embedding function (uses ONNX, no PyTorch needed)
-embedding_fn = embedding_functions.DefaultEmbeddingFunction()
+import pdfplumber
+from docx import Document as DocxDocument
 
-# Create ChromaDB client
-client = chromadb.PersistentClient(path="chroma_db")
-collection = client.get_or_create_collection(
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+chroma_client = chromadb.PersistentClient(path=os.path.join(BASE_DIR, "chroma_db"))
+embedding_fn = DefaultEmbeddingFunction()
+# collection = chroma_client.get_or_create_collection(
+#     name="documents",
+#     embedding_function=embedding_fn
+# )
+collection = chroma_client.get_or_create_collection(
     name="business_docs",
     embedding_function=embedding_fn
 )
 
+
+def extract_text(filepath):
+    """Extract text from .txt, .pdf, or .docx files."""
+    ext = os.path.splitext(filepath)[1].lower()
+
+    if ext == ".txt":
+        with open(filepath, "r") as f:
+            return f.read()
+
+    elif ext == ".pdf":
+        text = ""
+        with pdfplumber.open(filepath) as pdf:
+            for page in pdf.pages:
+                text += page.extract_text() or ""
+        return text
+
+    elif ext == ".docx":
+        doc = DocxDocument(filepath)
+        return "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
+
+    else:
+        print(f"Skipping unsupported file type: {ext}")
+        return None
+
+
 def chunk_text(text, chunk_size=200):
-    """Split text into smaller chunks"""
+    """Split text into chunks of ~chunk_size characters."""
     words = text.split()
-    chunks = []
-    current_chunk = []
-    current_size = 0
-
+    chunks, current, length = [], [], 0
     for word in words:
-        current_chunk.append(word)
-        current_size += len(word) + 1
-        if current_size >= chunk_size:
-            chunks.append(' '.join(current_chunk))
-            current_chunk = []
-            current_size = 0
-
-    if current_chunk:
-        chunks.append(' '.join(current_chunk))
-
+        current.append(word)
+        length += len(word) + 1
+        if length >= chunk_size:
+            chunks.append(" ".join(current))
+            current, length = [], 0
+    if current:
+        chunks.append(" ".join(current))
     return chunks
 
+
 def ingest_document(filepath):
-    """Read a document, chunk it, and store in ChromaDB"""
+    """Ingest a single document into ChromaDB."""
+    text = extract_text(filepath)
+    if not text:
+        return
+
     filename = os.path.basename(filepath)
-    print(f"Ingesting {filename}...")
-
-    with open(filepath, 'r') as f:
-        text = f.read()
-
     chunks = chunk_text(text)
-    print(f"  Split into {len(chunks)} chunks")
 
-    # ChromaDB computes embeddings automatically
-    for i, chunk in enumerate(chunks):
-        collection.add(
-            ids=[f"{filename}_chunk_{i}"],
-            documents=[chunk],
-            metadatas=[{"source": filename}]
-        )
-    print(f"  Done!")
+    # Remove existing chunks for this file to avoid duplicates
+    existing = collection.get(where={"source": filename})
+    if existing["ids"]:
+        collection.delete(ids=existing["ids"])
+
+    ids = [f"{filename}_chunk_{i}" for i in range(len(chunks))]
+    metadatas = [{"source": filename} for _ in chunks]
+
+    collection.add(ids=ids, documents=chunks, metadatas=metadatas)
+    print(f"✓ {filename} — {len(chunks)} chunks ingested")
+
+
+def ingest_all():
+    """Ingest all supported documents from the docs/ folder."""
+    docs_dir = os.path.join(BASE_DIR, "docs")
+    supported = {".txt", ".pdf", ".docx"}
+
+    files = [f for f in os.listdir(docs_dir)
+             if os.path.splitext(f)[1].lower() in supported]
+
+    if not files:
+        print("No supported files found in docs/")
+        return
+
+    print(f"Found {len(files)} documents to ingest...\n")
+    for filename in files:
+        ingest_document(os.path.join(docs_dir, filename))
+
+    print(f"\nDone! {len(files)} documents ingested.")
+
 
 if __name__ == "__main__":
-    docs_folder = "docs"
-    for filename in os.listdir(docs_folder):
-        if filename.endswith(".txt"):
-            ingest_document(os.path.join(docs_folder, filename))
-
-    print(f"\nAll documents ingested! Total chunks stored: {collection.count()}")
+    ingest_all()
