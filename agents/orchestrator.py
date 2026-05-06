@@ -27,9 +27,8 @@ class AgentState(TypedDict):
 
 # ── 2. Nodes ──────────────────────────────────────────────────────────────────
 # Each node is a function that receives the current state and returns updates.
-
-def orchestrator_node(state: AgentState) -> AgentState:
-    """Ask the LLM to decide: SQL or RAG?"""
+def decide_route(question: str) -> str:
+    """Return 'SQL' or 'RAG' for a given question. Used by the UI directly."""
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[
@@ -46,12 +45,40 @@ Key rule: if the question asks about a product ATTRIBUTE or LABEL
 
 Reply with ONLY one word: SQL or RAG."""
             },
-            {"role": "user", "content": state["question"]}
+            {"role": "user", "content": question}
         ]
     )
-    route = response.choices[0].message.content.strip().upper()
-    tokens = response.usage.total_tokens
-    return {**state, "route": route, "tokens_used": tokens}
+    return response.choices[0].message.content.strip().upper()
+
+# def orchestrator_node(state: AgentState) -> AgentState:
+#     """Ask the LLM to decide: SQL or RAG?"""
+#     response = client.chat.completions.create(
+#         model="llama-3.3-70b-versatile",
+#         messages=[
+#             {
+#                 "role": "system",
+#                 "content": """You are a routing assistant.
+# - SQL: questions needing data aggregation, counts, filters on orders,
+#   customers, revenue, quantities, prices
+# - RAG: questions about policies, rules, shipping times, returns,
+#   product labels, certifications, guides
+
+# Key rule: if the question asks about a product ATTRIBUTE or LABEL
+# (like gluten-free, organic), route to RAG.
+
+# Reply with ONLY one word: SQL or RAG."""
+#             },
+#             {"role": "user", "content": state["question"]}
+#         ]
+#     )
+#     route = response.choices[0].message.content.strip().upper()
+#     tokens = response.usage.total_tokens
+#     return {**state, "route": route, "tokens_used": tokens}
+def orchestrator_node(state: AgentState) -> AgentState:
+    """Ask the LLM to decide: SQL or RAG?"""
+    route = decide_route(state["question"])
+    # count tokens separately since decide_route doesn't return usage
+    return {**state, "route": route, "tokens_used": 0}
 
 
 def sql_node(state: AgentState) -> AgentState:
