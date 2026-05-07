@@ -157,5 +157,11 @@ if prompt := st.chat_input("Ask a question..."):
             elif route == "RAG":
                 answer = answer_from_docs(prompt)
                 st.markdown(answer)
+            else:  # NEITHER      added on 2026-05-06
+                answer = (
+                    "I can only answer questions about business data and documents. "
+                    "Try asking about orders, customers, products, or company policies."
+                )
+                st.markdown(answer)
 
     st.session_state.messages.append({"role": "assistant", "content": answer})

@@ -112,7 +112,21 @@ def ask(question, silent=False):
         if not silent:
             print(f"Error: {error}")
         return f"Sorry, I couldn't run that query. Error: {error}"
+    # else:
+    #     if not silent:
+    #         print(f"\nResult:")
+    #         print(result.to_string(index=False))
+        
+    #     explanation = explain_results(question, sql, result.to_string(index=False))
+    #     if not silent:
+    #         print(f"\nInsight: {explanation}")
+    #     return explanation  # added on 2026-05-04 to avoid "NoneType"
     else:
+        if result.empty:
+            if not silent:
+                print("No results found.")
+            return "I don't have data to answer that question. The query returned no results — try asking about orders, customers, or products in the database."
+        
         if not silent:
             print(f"\nResult:")
             print(result.to_string(index=False))
@@ -120,7 +134,7 @@ def ask(question, silent=False):
         explanation = explain_results(question, sql, result.to_string(index=False))
         if not silent:
             print(f"\nInsight: {explanation}")
-        return explanation  # added on 2026-05-04 to avoid "NoneType"
+        return explanation
 
 # Test
 if __name__ == "__main__":

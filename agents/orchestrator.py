@@ -28,7 +28,7 @@ class AgentState(TypedDict):
 # ── 2. Nodes ──────────────────────────────────────────────────────────────────
 # Each node is a function that receives the current state and returns updates.
 def decide_route(question: str) -> str:
-    """Return 'SQL' or 'RAG' for a given question. Used by the UI directly."""
+    """Return 'SQL', 'RAG', or 'NEITHER' for a given question."""
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[
@@ -39,16 +39,40 @@ def decide_route(question: str) -> str:
   customers, revenue, quantities, prices
 - RAG: questions about policies, rules, shipping times, returns,
   product labels, certifications, guides
+- NEITHER: questions completely unrelated to business data or documents
+  (e.g. weather, news, sports, general knowledge, coding help)
 
 Key rule: if the question asks about a product ATTRIBUTE or LABEL
 (like gluten-free, organic), route to RAG.
 
-Reply with ONLY one word: SQL or RAG."""
+Reply with ONLY one word: SQL, RAG, or NEITHER."""
             },
             {"role": "user", "content": question}
         ]
     )
     return response.choices[0].message.content.strip().upper()
+# def decide_route(question: str) -> str:
+#     """Return 'SQL' or 'RAG' for a given question. Used by the UI directly."""
+#     response = client.chat.completions.create(
+#         model="llama-3.3-70b-versatile",
+#         messages=[
+#             {
+#                 "role": "system",
+#                 "content": """You are a routing assistant.
+# - SQL: questions needing data aggregation, counts, filters on orders,
+#   customers, revenue, quantities, prices
+# - RAG: questions about policies, rules, shipping times, returns,
+#   product labels, certifications, guides
+
+# Key rule: if the question asks about a product ATTRIBUTE or LABEL
+# (like gluten-free, organic), route to RAG.
+
+# Reply with ONLY one word: SQL or RAG."""
+#             },
+#             {"role": "user", "content": question}
+#         ]
+#     )
+#     return response.choices[0].message.content.strip().upper()
 
 # def orchestrator_node(state: AgentState) -> AgentState:
 #     """Ask the LLM to decide: SQL or RAG?"""
@@ -92,40 +116,78 @@ def rag_node(state: AgentState) -> AgentState:
     answer = rag_ask(state["question"])
     return {**state, "answer": answer}
 
+# added "fallback_node" on 2025-05-06
+def fallback_node(state: AgentState) -> AgentState:
+    """Handle questions that are outside the scope of DataScope."""
+    answer = (
+        "I can only answer questions about business data and documents. "
+        "Try asking about orders, customers, products, or company policies — "
+        "for example: 'Which country has the most orders?' or 'What is the return policy?'"
+    )
+    return {**state, "answer": answer}
 
 # ── 3. Routing function ───────────────────────────────────────────────────────
 # This function reads the route from state and tells the graph which node to go to next.
 
-def route_decision(state: AgentState) -> Literal["sql_agent", "rag_agent"]:
+# def route_decision(state: AgentState) -> Literal["sql_agent", "rag_agent"]:
+#     if state["route"] == "SQL":
+#         return "sql_agent"
+#     return "rag_agent"
+def route_decision(state: AgentState) -> Literal["sql_agent", "rag_agent", "fallback"]:
     if state["route"] == "SQL":
         return "sql_agent"
-    return "rag_agent"
+    if state["route"] == "RAG":
+        return "rag_agent"
+    return "fallback"
 
 
 # ── 4. Build the graph ────────────────────────────────────────────────────────
 
+# workflow = StateGraph(AgentState)
+
+# workflow.add_node("orchestrator", orchestrator_node)
+# workflow.add_node("sql_agent", sql_node)
+# workflow.add_node("rag_agent", rag_node)
+
+# workflow.set_entry_point("orchestrator")
+
+# workflow.add_conditional_edges(
+#     "orchestrator",       # from this node
+#     route_decision,       # call this function to decide
+#     {
+#         "sql_agent": "sql_agent",   # if returns "sql_agent" → go to sql_agent node
+#         "rag_agent": "rag_agent",   # if returns "rag_agent" → go to rag_agent node
+#     }
+# )
+
+# workflow.add_edge("sql_agent", END)
+# workflow.add_edge("rag_agent", END)
+
+# graph = workflow.compile()
 workflow = StateGraph(AgentState)
 
 workflow.add_node("orchestrator", orchestrator_node)
 workflow.add_node("sql_agent", sql_node)
 workflow.add_node("rag_agent", rag_node)
+workflow.add_node("fallback", fallback_node)
 
 workflow.set_entry_point("orchestrator")
 
 workflow.add_conditional_edges(
-    "orchestrator",       # from this node
-    route_decision,       # call this function to decide
+    "orchestrator",
+    route_decision,
     {
-        "sql_agent": "sql_agent",   # if returns "sql_agent" → go to sql_agent node
-        "rag_agent": "rag_agent",   # if returns "rag_agent" → go to rag_agent node
+        "sql_agent": "sql_agent",
+        "rag_agent": "rag_agent",
+        "fallback": "fallback",
     }
 )
 
 workflow.add_edge("sql_agent", END)
 workflow.add_edge("rag_agent", END)
+workflow.add_edge("fallback", END)
 
 graph = workflow.compile()
-
 
 # ── 5. Public interface ───────────────────────────────────────────────────────
 # Same function name and return value as before — api/main.py and ui/app.py unchanged.
