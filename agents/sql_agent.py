@@ -25,6 +25,17 @@ def load_data():
     conn.execute(f"CREATE TABLE customers AS SELECT * FROM read_csv_auto('{BASE_DIR}/data/customers.csv')")
     return conn
 
+# Singleton connection — load CSV data once at module startup, reuse for all calls
+# Performance fix on 2026-05-07: previously load_data() was called on every ask(),
+# re-reading CSV files and recreating tables each time. Now it loads once and reuses.
+_conn = None
+
+def get_conn():
+    global _conn
+    if _conn is None:
+        _conn = load_data()
+    return _conn
+
 # Ask the LLM to generate SQL for a question
 def generate_sql(question, schema):
     response = client.chat.completions.create(
@@ -92,7 +103,7 @@ Please explain these results clearly."""
 
 # Main function that puts it all together
 def ask(question, silent=False):
-    conn = load_data()
+    conn = get_conn()
     
     schema = """
     orders(orderID, customerID, employeeID, orderDate, requiredDate, shippedDate, shipVia, freight, shipName, shipAddress, shipCity, shipRegion, shipPostalCode, shipCountry)
