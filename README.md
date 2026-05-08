@@ -49,12 +49,14 @@ Plain English Answer + Source Citation
 ## Features
 
 - **Multi-agent orchestration** — LangGraph graph routes questions to the right agent automatically
-- **SQL Agent** — schema injection, two-step LLM pipeline, error handling
+- **SQL Agent** — schema injection, two-step LLM pipeline, error handling, singleton connection for performance
 - **RAG Agent** — vector similarity search, hallucination prevention, source citations
+- **Streaming responses** — tokens stream live to the UI as they are generated, no waiting for full response
+- **Graceful degradation** — NEITHER route handles out-of-scope questions; empty SQL results return helpful messages instead of blank tables
 - **Multi-format document ingestion** — ingest `.txt`, `.pdf`, and `.docx` files
 - **MCP server** — connect Claude Desktop or Cursor to DataScope with zero extra code
 - **FastAPI REST API** — with auto-generated Swagger UI at `/docs`
-- **Streamlit chat UI** — session state, routing display, SQL + dataframe view
+- **Streamlit chat UI** — session state, routing display, SQL + dataframe view, streaming output
 - **MLflow LLMOps** — tracks every LLM call (latency, tokens, estimated cost)
 - **Dockerized** — full stack runs anywhere with `docker-compose up`
 - **CI/CD** — GitHub Actions runs tests and builds Docker on every push
@@ -206,7 +208,7 @@ Python · LangGraph · Groq API · Llama 3.3 70B · DuckDB · ChromaDB · FastAP
 
 ## Roadmap
 
-- [ ] Streaming responses
+- [x] Streaming responses
 - [ ] Conversation memory
 - [ ] Web search agent (third route)
 - [ ] Evaluation pipeline with golden dataset
