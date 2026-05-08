@@ -53,6 +53,34 @@ If the answer is not in the context, say 'I don't have that information in my do
 
     return response.choices[0].message.content.strip()
 
+# Streaming version of answer_from_docs — yields tokens as they arrive
+# Used by Streamlit UI for live token display; answer_from_docs() stays for MCP/API
+def answer_from_docs_stream(question):
+    chunks, metadatas = search_documents(question)
+    context = ""
+    for i, (chunk, meta) in enumerate(zip(chunks, metadatas)):
+        context += f"[Source: {meta['source']}]\n{chunk}\n\n"
+
+    stream = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {
+                "role": "system",
+                "content": """You are a helpful assistant. Answer the question using ONLY
+the provided context. Always mention which document your answer comes from.
+If the answer is not in the context, say 'I don't have that information in my documents.'"""
+            },
+            {
+                "role": "user",
+                "content": f"Context:\n{context}\n\nQuestion: {question}"
+            }
+        ],
+        stream=True
+    )
+    for chunk in stream:
+        if chunk.choices[0].delta.content:
+            yield chunk.choices[0].delta.content
+
 if __name__ == "__main__":
     questions = [
         "What is the return policy?",

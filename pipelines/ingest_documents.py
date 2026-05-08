@@ -7,6 +7,7 @@ from docx import Document as DocxDocument
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Persistent Database
 chroma_client = chromadb.PersistentClient(path=os.path.join(BASE_DIR, "chroma_db"))
 embedding_fn = DefaultEmbeddingFunction()
 # collection = chroma_client.get_or_create_collection(

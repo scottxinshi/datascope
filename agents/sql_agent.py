@@ -97,6 +97,27 @@ Please explain these results clearly."""
         ]
     )
     return response.choices[0].message.content.strip()
+# Streaming version of explain_results — yields tokens as they arrive
+# Used by Streamlit UI for live token display; explain_results() stays for MCP/API
+def explain_results_stream(question, sql, results):
+    stream = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a helpful data analyst. Explain query results in clear, concise plain English. Be specific with numbers. Keep it to 2-3 sentences."
+            },
+            {
+                "role": "user",
+                "content": f"Question asked: {question}\n\nSQL that was run: {sql}\n\nResults: {results}\n\nPlease explain these results clearly."
+            }
+        ],
+        stream=True
+    )
+    for chunk in stream:
+        if chunk.choices[0].delta.content:
+            yield chunk.choices[0].delta.content
+
 # ***********************************************************
 # ***********************************************************
 

@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import streamlit as st
 from agents.orchestrator import ask , decide_route
-from agents.rag_agent import answer_from_docs
+from agents.rag_agent import answer_from_docs, answer_from_docs_stream
 from agents.sql_agent import ask as sql_ask
 import io
 
@@ -127,41 +127,42 @@ if prompt := st.chat_input("Ask a question..."):
 
     # Get answer from orchestrator
     with st.chat_message("assistant"):
+
+        # Spinner covers only the routing decision (invisible to user, ~1s LLM call)
         with st.spinner("Thinking..."):
-            
-            # Decide route
             route = decide_route(prompt)
-            st.caption(f"Routed to: {route} Agent")
-            
-            if route == "SQL":
-                # Capture SQL agent output
-                from agents.sql_agent import load_data, generate_sql, run_sql, explain_results
-                conn = load_data()
-                schema = """
-                orders(orderID, customerID, employeeID, orderDate, requiredDate, shippedDate, shipVia, freight, shipName, shipAddress, shipCity, shipRegion, shipPostalCode, shipCountry)
-                products(productID, productName, supplierID, categoryID, quantityPerUnit, unitPrice, unitsInStock, unitsOnOrder, reorderLevel, discontinued)
-                customers(customerID, companyName, contactName, contactTitle, address, city, region, postalCode, country, phone, fax)
-                """
+
+        st.caption(f"Routed to: {route} Agent")
+
+        if route == "SQL":
+            from agents.sql_agent import get_conn, generate_sql, run_sql, explain_results_stream
+            conn = get_conn()
+            schema = """
+            orders(orderID, customerID, employeeID, orderDate, requiredDate, shippedDate, shipVia, freight, shipName, shipAddress, shipCity, shipRegion, shipPostalCode, shipCountry)
+            products(productID, productName, supplierID, categoryID, quantityPerUnit, unitPrice, unitsInStock, unitsOnOrder, reorderLevel, discontinued)
+            customers(customerID, companyName, contactName, contactTitle, address, city, region, postalCode, country, phone, fax)
+            """
+            with st.spinner("Generating SQL..."):
                 sql = generate_sql(prompt, schema)
-                st.code(sql, language="sql")
-                
-                result, error = run_sql(conn, sql)
-                if error:
-                    answer = f"Error running query: {error}"
-                    st.error(answer)
-                else:
-                    st.dataframe(result)
-                    answer = explain_results(prompt, sql, result.to_string(index=False))
-                    st.markdown(f"**Insight:** {answer}")
-                    
-            elif route == "RAG":
-                answer = answer_from_docs(prompt)
-                st.markdown(answer)
-            else:  # NEITHER      added on 2026-05-06
-                answer = (
-                    "I can only answer questions about business data and documents. "
-                    "Try asking about orders, customers, products, or company policies."
-                )
-                st.markdown(answer)
+            st.code(sql, language="sql")
+
+            result, error = run_sql(conn, sql)
+            if error:
+                answer = f"Error running query: {error}"
+                st.error(answer)
+            else:
+                st.dataframe(result)
+                st.markdown("**Insight:**")
+                answer = st.write_stream(explain_results_stream(prompt, sql, result.to_string(index=False)))
+
+        elif route == "RAG":
+            answer = st.write_stream(answer_from_docs_stream(prompt))
+
+        else:  # NEITHER      added on 2026-05-06
+            answer = (
+                "I can only answer questions about business data and documents. "
+                "Try asking about orders, customers, products, or company policies."
+            )
+            st.markdown(answer)
 
     st.session_state.messages.append({"role": "assistant", "content": answer})
