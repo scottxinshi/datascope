@@ -54,6 +54,7 @@ Plain English Answer + Source Citation
 - **SQL Agent** — schema injection, two-step LLM pipeline, error handling, singleton connection for performance
 - **RAG Agent** — vector similarity search, hallucination prevention, source citations
 - **Web Agent** — live web search via Tavily with a 999-search monthly usage limit and automatic monthly reset
+- **Conversation memory** — windowed memory keeps the last 3 turns of context so follow-up questions like "tell me more about those customers" reference previous answers
 - **Streaming responses** — tokens stream live to the UI as they are generated, no waiting for full response
 - **Graceful degradation** — NEITHER route handles out-of-scope questions; empty SQL results return helpful messages instead of blank tables
 - **Multi-format document ingestion** — ingest `.txt`, `.pdf`, and `.docx` files
@@ -215,7 +216,7 @@ Python · LangGraph · Groq API · Llama 3.3 70B · DuckDB · ChromaDB · Tavily
 
 - [x] Streaming responses
 - [x] Web search agent (Tavily)
-- [ ] Conversation memory
+- [x] Conversation memory
 - [ ] Evaluation pipeline with golden dataset
 - [ ] Azure Container Apps deployment
 - [ ] Authentication and row-level security
