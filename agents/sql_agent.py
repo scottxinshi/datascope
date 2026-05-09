@@ -76,42 +76,43 @@ def run_sql(conn, sql):
         return None, str(e)
     
 # Added Explain Results so explain it in plain English
-def explain_results(question, sql, results):
+
+def explain_results(question, sql, results, history=[]):
+    messages = [
+        {
+            "role": "system",
+            "content": "You are a helpful data analyst. Explain query results in clear, concise plain English. Be specific with numbers. Keep it to 2-3 sentences."
+        }
+    ]
+    messages.extend(history[-6:])  # last 3 turns
+    messages.append({
+        "role": "user",
+        "content": f"Question asked: {question}\n\nSQL that was run: {sql}\n\nResults: {results}\n\nPlease explain these results clearly."
+    })
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a helpful data analyst. Explain query results in clear, concise plain English. Be specific with numbers. Keep it to 2-3 sentences."
-            },
-            {
-                "role": "user",
-                "content": f"""Question asked: {question}
-                
-SQL that was run: {sql}
-
-Results: {results}
-
-Please explain these results clearly."""
-            }
-        ]
+        messages=messages
     )
     return response.choices[0].message.content.strip()
+
 # Streaming version of explain_results — yields tokens as they arrive
 # Used by Streamlit UI for live token display; explain_results() stays for MCP/API
-def explain_results_stream(question, sql, results):
+
+def explain_results_stream(question, sql, results, history=[]):
+    messages = [
+        {
+            "role": "system",
+            "content": "You are a helpful data analyst. Explain query results in clear, concise plain English. Be specific with numbers. Keep it to 2-3 sentences."
+        }
+    ]
+    messages.extend(history[-6:])  # last 3 turns
+    messages.append({
+        "role": "user",
+        "content": f"Question asked: {question}\n\nSQL that was run: {sql}\n\nResults: {results}\n\nPlease explain these results clearly."
+    })
     stream = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a helpful data analyst. Explain query results in clear, concise plain English. Be specific with numbers. Keep it to 2-3 sentences."
-            },
-            {
-                "role": "user",
-                "content": f"Question asked: {question}\n\nSQL that was run: {sql}\n\nResults: {results}\n\nPlease explain these results clearly."
-            }
-        ],
+        messages=messages,
         stream=True
     )
     for chunk in stream:

@@ -112,6 +112,9 @@ if prompt := st.chat_input("Ask a question..."):
     # Get answer from orchestrator
     with st.chat_message("assistant"):
 
+        # Extract conversation history for context (last 3 turns = 6 messages)
+        history = st.session_state.messages[-6:] if st.session_state.messages else []
+
         # Spinner covers only the routing decision
         with st.spinner("Thinking..."):
             route = decide_route(prompt)
@@ -137,15 +140,15 @@ if prompt := st.chat_input("Ask a question..."):
             else:
                 st.dataframe(result)
                 st.markdown("**Insight:**")
-                answer = st.write_stream(explain_results_stream(prompt, sql, result.to_string(index=False)))
+                answer = st.write_stream(explain_results_stream(prompt, sql, result.to_string(index=False), history=history))
 
         elif route == "RAG":
-            answer = st.write_stream(answer_from_docs_stream(prompt))
+            answer = st.write_stream(answer_from_docs_stream(prompt, history=history))
 
         elif route == "WEB":
             with st.spinner("Searching the web..."):
                 pass
-            answer = st.write_stream(search_web_stream(prompt))
+            answer = st.write_stream(search_web_stream(prompt, history=history))
 
         else:  # NEITHER
             answer = (

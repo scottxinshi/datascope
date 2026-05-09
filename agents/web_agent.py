@@ -50,47 +50,40 @@ def get_remaining_searches():
     return max(0, MONTHLY_LIMIT - usage["count"])
 
 
-def search_web(question):
-    """Search the web and return an answer. Returns None if limit reached."""
+def search_web(question, history=[]):
     if not check_and_increment():
-        remaining = get_remaining_searches()
-        return (
-            f"Monthly web search limit of {MONTHLY_LIMIT} reached. "
-            f"Resets on the 1st of next month. "
-            f"Try asking about your business data or documents instead."
-        )
-
+        ...  # unchanged
     try:
         results = tavily.search(query=question, max_results=5)
         sources = results.get("results", [])
-
         context = ""
         for i, source in enumerate(sources):
             context += f"[Source {i+1}: {source['url']}]\n{source['content']}\n\n"
 
+        messages = [
+            {
+                "role": "system",
+                "content": """You are a helpful research assistant. Answer the question using the provided web search results.
+Always cite your sources by mentioning the URL. Keep the answer concise and factual."""
+            }
+        ]
+        messages.extend(history[-6:])  # last 3 turns
+        messages.append({
+            "role": "user",
+            "content": f"Search results:\n{context}\n\nQuestion: {question}"
+        })
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[
-                {
-                    "role": "system",
-                    "content": """You are a helpful research assistant. Answer the question using the provided web search results.
-Always cite your sources by mentioning the URL. Keep the answer concise and factual."""
-                },
-                {
-                    "role": "user",
-                    "content": f"Search results:\n{context}\n\nQuestion: {question}"
-                }
-            ]
+            messages=messages
         )
         return response.choices[0].message.content.strip()
-
     except Exception as e:
         if "quota" in str(e).lower() or "limit" in str(e).lower():
             return "Monthly web search limit reached. Resets on the 1st of next month."
         return f"Web search failed: {str(e)}"
 
 
-def search_web_stream(question):
+def search_web_stream(question, history=[]):
     """Streaming version of search_web — yields tokens as they arrive."""
     if not check_and_increment():
         yield (
@@ -108,19 +101,22 @@ def search_web_stream(question):
         for i, source in enumerate(sources):
             context += f"[Source {i+1}: {source['url']}]\n{source['content']}\n\n"
 
+        messages = [
+            {
+                "role": "system",
+                "content": """You are a helpful research assistant. Answer the question using the provided web search results.
+Always cite your sources by mentioning the URL. Keep the answer concise and factual."""
+            }
+        ]
+        messages.extend(history[-6:])  # last 3 turns
+        messages.append({
+            "role": "user",
+            "content": f"Search results:\n{context}\n\nQuestion: {question}"
+        })
+
         stream = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[
-                {
-                    "role": "system",
-                    "content": """You are a helpful research assistant. Answer the question using the provided web search results.
-Always cite your sources by mentioning the URL. Keep the answer concise and factual."""
-                },
-                {
-                    "role": "user",
-                    "content": f"Search results:\n{context}\n\nQuestion: {question}"
-                }
-            ],
+            messages=messages,
             stream=True
         )
         for chunk in stream:

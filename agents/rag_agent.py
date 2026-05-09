@@ -26,55 +26,55 @@ def search_documents(question, n_results=3): # 3- 5 normally
     )
     return results['documents'][0], results['metadatas'][0]
 
-def answer_from_docs(question):
-    """Search documents and answer the question with citations"""
+def answer_from_docs(question, history=[]):
     chunks, metadatas = search_documents(question)
-
-    # Build context from retrieved chunks
     context = ""
     for i, (chunk, meta) in enumerate(zip(chunks, metadatas)):
         context += f"[Source: {meta['source']}]\n{chunk}\n\n"
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {
-                "role": "system",
-                "content": """You are a helpful assistant. Answer the question using ONLY 
+    messages = [
+        {
+            "role": "system",
+            "content": """You are a helpful assistant. Answer the question using ONLY
 the provided context. Always mention which document your answer comes from.
 If the answer is not in the context, say 'I don't have that information in my documents.'"""
-            },
-            {
-                "role": "user",
-                "content": f"Context:\n{context}\n\nQuestion: {question}"
-            }
-        ]
+        }
+    ]
+    messages.extend(history[-6:])  # last 3 turns
+    messages.append({
+        "role": "user",
+        "content": f"Context:\n{context}\n\nQuestion: {question}"
+    })
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=messages
     )
-
     return response.choices[0].message.content.strip()
 
 # Streaming version of answer_from_docs — yields tokens as they arrive
 # Used by Streamlit UI for live token display; answer_from_docs() stays for MCP/API
-def answer_from_docs_stream(question):
+def answer_from_docs_stream(question, history=[]):
     chunks, metadatas = search_documents(question)
     context = ""
     for i, (chunk, meta) in enumerate(zip(chunks, metadatas)):
         context += f"[Source: {meta['source']}]\n{chunk}\n\n"
 
-    stream = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {
-                "role": "system",
-                "content": """You are a helpful assistant. Answer the question using ONLY
+    messages = [
+        {
+            "role": "system",
+            "content": """You are a helpful assistant. Answer the question using ONLY
 the provided context. Always mention which document your answer comes from.
 If the answer is not in the context, say 'I don't have that information in my documents.'"""
-            },
-            {
-                "role": "user",
-                "content": f"Context:\n{context}\n\nQuestion: {question}"
-            }
-        ],
+        }
+    ]
+    messages.extend(history[-6:])  # last 3 turns
+    messages.append({
+        "role": "user",
+        "content": f"Context:\n{context}\n\nQuestion: {question}"
+    })
+    stream = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=messages,
         stream=True
     )
     for chunk in stream:
