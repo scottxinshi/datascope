@@ -1,6 +1,6 @@
 # 🔍 DataScope
 
-A production-grade multi-agent AI analytics system that answers natural language questions about business data and documents.
+A production-grade multi-agent AI analytics system that answers natural language questions about business data, documents, and the web.
 
 Built by [Scott Xin Shi](https://www.linkedin.com/in/scott-xin-shi) · [GitHub](https://github.com/scottxinshi/datascope)
 
@@ -8,10 +8,11 @@ Built by [Scott Xin Shi](https://www.linkedin.com/in/scott-xin-shi) · [GitHub](
 
 ## What It Does
 
-DataScope lets you ask questions in plain English and get answers from two sources:
+DataScope lets you ask questions in plain English and get answers from three sources:
 
 - **Your database** — "Which country has the most orders?" → generates SQL, runs it, explains the result
 - **Your documents** — "What is the return policy?" → searches PDFs, Word files, and text documents and returns a cited answer
+- **The web** — "How many teams are in the 2026 FIFA World Cup?" → searches live web results and returns a cited answer
 
 Every question is automatically routed to the right agent by an LLM-based orchestrator.
 
@@ -23,10 +24,10 @@ Every question is automatically routed to the right agent by an LLM-based orches
 User Question
       ↓
 Orchestrator (LangGraph + Llama 3.3 70B)
-      ↓              ↓
-SQL Agent         RAG Agent
-(DuckDB)       (ChromaDB + ONNX)
-      ↓              ↓
+      ↓          ↓           ↓          ↓
+SQL Agent    RAG Agent   Web Agent   Fallback
+(DuckDB)  (ChromaDB)   (Tavily)    (NEITHER)
+      ↓          ↓           ↓
 Plain English Answer + Source Citation
 ```
 
@@ -36,6 +37,7 @@ Plain English Answer + Source Citation
 | Orchestrator | LangGraph | Multi-agent graph routing |
 | SQL Agent | Python + DuckDB | Natural language → SQL → explanation |
 | RAG Agent | ChromaDB + ONNX embeddings | Document search with citations |
+| Web Agent | Tavily Search API | Live web search with usage limit |
 | Document Ingestion | pdfplumber + python-docx | Supports .txt, .pdf, .docx |
 | MCP Server | FastMCP | Exposes tools to Claude Desktop and Cursor |
 | API | FastAPI + Uvicorn | REST endpoint with Swagger UI |
@@ -51,6 +53,7 @@ Plain English Answer + Source Citation
 - **Multi-agent orchestration** — LangGraph graph routes questions to the right agent automatically
 - **SQL Agent** — schema injection, two-step LLM pipeline, error handling, singleton connection for performance
 - **RAG Agent** — vector similarity search, hallucination prevention, source citations
+- **Web Agent** — live web search via Tavily with a 999-search monthly usage limit and automatic monthly reset
 - **Streaming responses** — tokens stream live to the UI as they are generated, no waiting for full response
 - **Graceful degradation** — NEITHER route handles out-of-scope questions; empty SQL results return helpful messages instead of blank tables
 - **Multi-format document ingestion** — ingest `.txt`, `.pdf`, and `.docx` files
@@ -161,7 +164,8 @@ datascope/
 ├── agents/
 │   ├── orchestrator.py      # LangGraph multi-agent router
 │   ├── sql_agent.py         # Natural language → SQL → explanation
-│   └── rag_agent.py         # Document search with citations
+│   ├── rag_agent.py         # Document search with citations
+│   └── web_agent.py         # Live web search via Tavily with usage limit
 ├── api/
 │   └── main.py              # FastAPI REST endpoints
 ├── ui/
@@ -188,6 +192,7 @@ datascope/
 ```bash
 # .env
 GROQ_API_KEY=your_groq_api_key_here
+TAVILY_API_KEY=your_tavily_api_key_here
 ```
 
 ---
@@ -202,15 +207,15 @@ pytest tests/test_agents.py -v
 
 ## Tech Stack
 
-Python · LangGraph · Groq API · Llama 3.3 70B · DuckDB · ChromaDB · FastAPI · Streamlit · MLflow · Docker · GitHub Actions · MCP (Model Context Protocol)
+Python · LangGraph · Groq API · Llama 3.3 70B · DuckDB · ChromaDB · Tavily · FastAPI · Streamlit · MLflow · Docker · GitHub Actions · MCP (Model Context Protocol)
 
 ---
 
 ## Roadmap
 
 - [x] Streaming responses
+- [x] Web search agent (Tavily)
 - [ ] Conversation memory
-- [ ] Web search agent (third route)
 - [ ] Evaluation pipeline with golden dataset
 - [ ] Azure Container Apps deployment
 - [ ] Authentication and row-level security
