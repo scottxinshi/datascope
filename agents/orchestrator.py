@@ -8,6 +8,7 @@ from langgraph.graph import StateGraph, END
 
 from agents.sql_agent import ask as sql_ask
 from agents.rag_agent import answer_from_docs as rag_ask
+from agents.web_agent import search_web as web_ask # added on 2026-05-08
 from llmops.tracker import track_llm_call
 
 load_dotenv()
@@ -39,8 +40,11 @@ def decide_route(question: str) -> str:
   customers, revenue, quantities, prices
 - RAG: questions about policies, rules, shipping times, returns,
   product labels, certifications, guides
-- NEITHER: questions completely unrelated to business data or documents
-  (e.g. weather, news, sports, general knowledge, coding help)
+- WEB: questions about current events, news, general knowledge,
+  weather, sports, or anything not in business data or documents
+- NEITHER: questions that are completely unanswerable or nonsensical
+
+Reply with ONLY one word: SQL, RAG, WEB, or NEITHER.
 
 Key rule: if the question asks about a product ATTRIBUTE or LABEL
 (like gluten-free, organic), route to RAG.
@@ -116,6 +120,11 @@ def rag_node(state: AgentState) -> AgentState:
     answer = rag_ask(state["question"])
     return {**state, "answer": answer}
 
+def web_node(state: AgentState) -> AgentState:
+    """Run the web search agent and store the answer in state."""
+    answer = web_ask(state["question"])
+    return {**state, "answer": answer}
+
 # added "fallback_node" on 2025-05-06
 def fallback_node(state: AgentState) -> AgentState:
     """Handle questions that are outside the scope of DataScope."""
@@ -133,11 +142,13 @@ def fallback_node(state: AgentState) -> AgentState:
 #     if state["route"] == "SQL":
 #         return "sql_agent"
 #     return "rag_agent"
-def route_decision(state: AgentState) -> Literal["sql_agent", "rag_agent", "fallback"]:
+def route_decision(state: AgentState) -> Literal["sql_agent", "rag_agent", "web_agent", "fallback"]:
     if state["route"] == "SQL":
         return "sql_agent"
     if state["route"] == "RAG":
         return "rag_agent"
+    if state["route"] == "WEB":
+        return "web_agent"
     return "fallback"
 
 
@@ -169,6 +180,7 @@ workflow = StateGraph(AgentState)
 workflow.add_node("orchestrator", orchestrator_node)
 workflow.add_node("sql_agent", sql_node)
 workflow.add_node("rag_agent", rag_node)
+workflow.add_node("web_agent", web_node)
 workflow.add_node("fallback", fallback_node)
 
 workflow.set_entry_point("orchestrator")
@@ -179,12 +191,14 @@ workflow.add_conditional_edges(
     {
         "sql_agent": "sql_agent",
         "rag_agent": "rag_agent",
+        "web_agent": "web_agent",
         "fallback": "fallback",
     }
 )
 
 workflow.add_edge("sql_agent", END)
 workflow.add_edge("rag_agent", END)
+workflow.add_edge("web_agent", END)
 workflow.add_edge("fallback", END)
 
 graph = workflow.compile()
