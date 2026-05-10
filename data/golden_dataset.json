@@ -1,0 +1,14 @@
+[
+    {"id": 1, "question": "Which country has the most orders?", "expected_route": "SQL", "expected_answer": "Germany"},
+    {"id": 2, "question": "What is the most expensive product?", "expected_route": "SQL", "expected_answer": "Cote de Blaye"},
+    {"id": 3, "question": "How many customers are in the database?", "expected_route": "SQL", "expected_answer": "91"},
+    {"id": 4, "question": "What are the top 3 countries by number of orders?", "expected_route": "SQL", "expected_answer": "Germany, USA, Brazil"},
+    {"id": 5, "question": "Which customer placed the most orders?", "expected_route": "SQL", "expected_answer": "Save-a-lot Markets"},
+    {"id": 6, "question": "What is the return policy?", "expected_route": "RAG", "expected_answer": "return"},
+    {"id": 7, "question": "How long does international shipping take?", "expected_route": "RAG", "expected_answer": "shipping"},
+    {"id": 8, "question": "What are the gluten-free products?", "expected_route": "RAG", "expected_answer": "gluten"},
+    {"id": 9, "question": "What is the capital of Japan?", "expected_route": "WEB", "expected_answer": "Tokyo"},
+    {"id": 10, "question": "Who won the 2022 FIFA World Cup?", "expected_route": "WEB", "expected_answer": "Argentina"},
+    {"id": 11, "question": "How many countries are in the United Nations?", "expected_route": "WEB", "expected_answer": "193"},
+    {"id": 12, "question": "asdfjkl qwerty random gibberish", "expected_route": "NEITHER", "expected_answer": ""}
+]

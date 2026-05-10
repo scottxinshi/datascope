@@ -1,0 +1,116 @@
+{
+    "timestamp": "2026-05-10T11:33:33.436067",
+    "total": 12,
+    "route_accuracy": 100.0,
+    "answer_accuracy": 100.0,
+    "results": [
+        {
+            "id": 1,
+            "question": "Which country has the most orders?",
+            "expected_route": "SQL",
+            "actual_route": "SQL",
+            "route_correct": true,
+            "judge_result": "PASS",
+            "actual_answer": "The query results show that Germany has the most orders, making it the country with the highest number of orders in the database. This means that out of all the orders, the largest portion was shipped"
+        },
+        {
+            "id": 2,
+            "question": "What is the most expensive product?",
+            "expected_route": "SQL",
+            "actual_route": "SQL",
+            "route_correct": true,
+            "judge_result": "PASS",
+            "actual_answer": "The most expensive product is the \"C\u00f4te de Blaye\", which costs $263.50. This product has the highest unit price among all products, with no other item exceeding this amount. The results show that the "
+        },
+        {
+            "id": 3,
+            "question": "How many customers are in the database?",
+            "expected_route": "SQL",
+            "actual_route": "SQL",
+            "route_correct": true,
+            "judge_result": "PASS",
+            "actual_answer": "There are 91 customers in the database, according to the results of the query. This number represents the total count of unique customer IDs found in the \"customers\" table. The query counted 91 indivi"
+        },
+        {
+            "id": 4,
+            "question": "What are the top 3 countries by number of orders?",
+            "expected_route": "SQL",
+            "actual_route": "SQL",
+            "route_correct": true,
+            "judge_result": "PASS",
+            "actual_answer": "The top 3 countries by number of orders are Germany and the USA, which are tied with 122 orders each, and Brazil with 83 orders. Germany and the USA are the clear leaders, having more than 39 more ord"
+        },
+        {
+            "id": 5,
+            "question": "Which customer placed the most orders?",
+            "expected_route": "SQL",
+            "actual_route": "SQL",
+            "route_correct": true,
+            "judge_result": "PASS",
+            "actual_answer": "The customer that placed the most orders is Save-a-lot Markets. They have placed a total of 13 orders, which is the highest number of orders among all customers. This result is based on the analysis o"
+        },
+        {
+            "id": 6,
+            "question": "What is the return policy?",
+            "expected_route": "RAG",
+            "actual_route": "RAG",
+            "route_correct": true,
+            "judge_result": "PASS",
+            "actual_answer": "The return policy is as follows: Customers may return any product within 30 days of purchase for a full refund, provided the product is in its original packaging and unused condition. This information"
+        },
+        {
+            "id": 7,
+            "question": "How long does international shipping take?",
+            "expected_route": "RAG",
+            "actual_route": "RAG",
+            "route_correct": true,
+            "judge_result": "PASS",
+            "actual_answer": "According to the shipping_policy.txt document, international shipping takes 10-14 business days."
+        },
+        {
+            "id": 8,
+            "question": "What are the gluten-free products?",
+            "expected_route": "RAG",
+            "actual_route": "RAG",
+            "route_correct": true,
+            "judge_result": "PASS",
+            "actual_answer": "The document doesn't specifically state what the gluten-free products are. However, according to product_guide.txt, gluten-free products are marked with a GF label in the catalog."
+        },
+        {
+            "id": 9,
+            "question": "What is the capital of Japan?",
+            "expected_route": "WEB",
+            "actual_route": "WEB",
+            "route_correct": true,
+            "judge_result": "PASS",
+            "actual_answer": "The capital of Japan is Tokyo. (Source: https://en.wikipedia.org/wiki/Capital_of_Japan, https://www.britannica.com/question/What-is-the-capital-of-Japan, https://voyapon.com/capital-of-japan/, https:/"
+        },
+        {
+            "id": 10,
+            "question": "Who won the 2022 FIFA World Cup?",
+            "expected_route": "WEB",
+            "actual_route": "WEB",
+            "route_correct": true,
+            "judge_result": "PASS",
+            "actual_answer": "Argentina won the 2022 FIFA World Cup, defeating France 4-2 in penalties after a 3-3 draw in extra time (https://en.wikipedia.org/wiki/2022_FIFA_World_Cup, https://sports.yahoo.com/articles/2022-world"
+        },
+        {
+            "id": 11,
+            "question": "How many countries are in the United Nations?",
+            "expected_route": "WEB",
+            "actual_route": "WEB",
+            "route_correct": true,
+            "judge_result": "PASS",
+            "actual_answer": "According to the United Nations website (https://www.un.org/en/about-us) and multiple other sources (https://www.thoughtco.com/members-of-united-nations-1435442, https://en.wikipedia.org/wiki/Member_s"
+        },
+        {
+            "id": 12,
+            "question": "asdfjkl qwerty random gibberish",
+            "expected_route": "NEITHER",
+            "actual_route": "NEITHER",
+            "route_correct": true,
+            "judge_result": "PASS",
+            "actual_answer": "Out of scope"
+        }
+    ]
+}
