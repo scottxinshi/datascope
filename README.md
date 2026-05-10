@@ -55,6 +55,7 @@ Plain English Answer + Source Citation
 - **RAG Agent** — vector similarity search, hallucination prevention, source citations
 - **Web Agent** — live web search via Tavily with a 999-search monthly usage limit and automatic monthly reset
 - **Conversation memory** — windowed memory keeps the last 3 turns of context so follow-up questions like "tell me more about those customers" reference previous answers
+- **Evaluation pipeline** — golden dataset of 12 curated questions with LLM-as-judge scoring; tracks routing accuracy and answer accuracy to catch regressions
 - **Streaming responses** — tokens stream live to the UI as they are generated, no waiting for full response
 - **Graceful degradation** — NEITHER route handles out-of-scope questions; empty SQL results return helpful messages instead of blank tables
 - **Multi-format document ingestion** — ingest `.txt`, `.pdf`, and `.docx` files
@@ -204,6 +205,18 @@ TAVILY_API_KEY=your_tavily_api_key_here
 pytest tests/test_agents.py -v
 ```
 
+## Evaluation Pipeline
+
+DataScope includes an evaluation pipeline that measures routing and answer accuracy against a golden dataset of 12 curated questions using LLM-as-judge scoring.
+
+```bash
+python tests/eval_pipeline.py
+```
+
+Results are saved to `data/eval_report.json`. Re-run after any major change (prompt updates, model swaps, new agents) to catch regressions.
+
+Current baseline: **100% routing accuracy, 100% answer accuracy (12/12)**
+
 ---
 
 ## Tech Stack
@@ -217,7 +230,7 @@ Python · LangGraph · Groq API · Llama 3.3 70B · DuckDB · ChromaDB · Tavily
 - [x] Streaming responses
 - [x] Web search agent (Tavily)
 - [x] Conversation memory
-- [ ] Evaluation pipeline with golden dataset
+- [x] Evaluation pipeline with golden dataset
 - [ ] Azure Container Apps deployment
 - [ ] Authentication and row-level security
 
