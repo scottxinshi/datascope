@@ -23,6 +23,9 @@ def load_data():
     conn.execute(f"CREATE TABLE orders AS SELECT * FROM read_csv_auto('{BASE_DIR}/data/orders.csv')")
     conn.execute(f"CREATE TABLE products AS SELECT * FROM read_csv_auto('{BASE_DIR}/data/products.csv')")
     conn.execute(f"CREATE TABLE customers AS SELECT * FROM read_csv_auto('{BASE_DIR}/data/customers.csv')")
+    conn.execute(f"CREATE TABLE employees AS SELECT * FROM read_csv_auto('{BASE_DIR}/data/employees.csv')")
+    conn.execute(f"CREATE TABLE suppliers AS SELECT * FROM read_csv_auto('{BASE_DIR}/data/suppliers.csv')")
+    conn.execute(f"CREATE TABLE order_details AS SELECT * FROM read_csv_auto('{BASE_DIR}/data/order_details.csv')")
     return conn
 
 # Singleton connection — load CSV data once at module startup, reuse for all calls
@@ -131,6 +134,9 @@ def ask(question, silent=False):
     orders(orderID, customerID, employeeID, orderDate, requiredDate, shippedDate, shipVia, freight, shipName, shipAddress, shipCity, shipRegion, shipPostalCode, shipCountry)
     products(productID, productName, supplierID, categoryID, quantityPerUnit, unitPrice, unitsInStock, unitsOnOrder, reorderLevel, discontinued)
     customers(customerID, companyName, contactName, contactTitle, address, city, region, postalCode, country, phone, fax)
+    employees(employeeID, lastName, firstName, title, titleOfCourtesy, birthDate, hireDate, city, region, country, reportsTo)
+    suppliers(supplierID, companyName, contactName, contactTitle, city, region, country, phone)
+    order_details(orderID, productID, unitPrice, quantity, discount)
     """
     
     if not silent:

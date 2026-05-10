@@ -128,6 +128,9 @@ if prompt := st.chat_input("Ask a question..."):
             orders(orderID, customerID, employeeID, orderDate, requiredDate, shippedDate, shipVia, freight, shipName, shipAddress, shipCity, shipRegion, shipPostalCode, shipCountry)
             products(productID, productName, supplierID, categoryID, quantityPerUnit, unitPrice, unitsInStock, unitsOnOrder, reorderLevel, discontinued)
             customers(customerID, companyName, contactName, contactTitle, address, city, region, postalCode, country, phone, fax)
+            employees(employeeID, lastName, firstName, title, titleOfCourtesy, birthDate, hireDate, city, region, country, reportsTo)
+            suppliers(supplierID, companyName, contactName, contactTitle, city, region, country, phone)
+            order_details(orderID, productID, unitPrice, quantity, discount)
             """
             with st.spinner("Generating SQL..."):
                 sql = generate_sql(prompt, schema)
