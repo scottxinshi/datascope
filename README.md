@@ -29,6 +29,8 @@ SQL Agent    RAG Agent   Web Agent   Fallback
 (DuckDB)  (ChromaDB)   (Tavily)    (NEITHER)
       ↓          ↓           ↓
 Plain English Answer + Source Citation
+      ↓
+Confidence Score (🟢 High / 🟡 Medium / 🔴 Low)
 ```
 
 | Layer | Technology | Purpose |
@@ -56,6 +58,8 @@ Plain English Answer + Source Citation
 - **Web Agent** — live web search via Tavily with a 999-search monthly usage limit and automatic monthly reset
 - **Conversation memory** — windowed memory keeps the last 3 turns of context so follow-up questions like "tell me more about those customers" reference previous answers
 - **Evaluation pipeline** — golden dataset of 12 curated questions with LLM-as-judge scoring; tracks routing accuracy and answer accuracy to catch regressions
+- **Agent confidence scoring** — every answer shows a confidence indicator (🟢 High / 🟡 Medium / 🔴 Low) based on observable signals: SQL result size, RAG chunk matches, and web source count
+- **Expanded knowledge base** — 6 tables (orders, products, customers, employees, suppliers, order_details) enabling complex cross-table JOIN queries
 - **Streaming responses** — tokens stream live to the UI as they are generated, no waiting for full response
 - **Graceful degradation** — NEITHER route handles out-of-scope questions; empty SQL results return helpful messages instead of blank tables
 - **Multi-format document ingestion** — ingest `.txt`, `.pdf`, and `.docx` files
@@ -231,8 +235,9 @@ Python · LangGraph · Groq API · Llama 3.3 70B · DuckDB · ChromaDB · Tavily
 - [x] Web search agent (Tavily)
 - [x] Conversation memory
 - [x] Evaluation pipeline with golden dataset
-- [ ] Azure Container Apps deployment
-- [ ] Authentication and row-level security
+- [x] Automated eval on CI/CD (GitHub Actions)
+- [x] Expanded knowledge base with cross-table JOIN support
+- [x] Agent confidence scoring
 
 ---
 
