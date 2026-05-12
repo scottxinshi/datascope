@@ -26,6 +26,14 @@ def search_documents(question, n_results=3): # 3- 5 normally
     )
     return results['documents'][0], results['metadatas'][0]
 
+def score_rag_confidence(chunks):
+    """Score confidence based on number of document chunks retrieved."""
+    if len(chunks) == 0:
+        return "🔴 Low"      # no matching chunks found
+    if len(chunks) <= 2:
+        return "🟡 Medium"   # weak match — few chunks
+    return "🟢 High"         # strong match — multiple chunks
+
 def answer_from_docs(question, history=[]):
     chunks, metadatas = search_documents(question)
     context = ""

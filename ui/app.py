@@ -4,8 +4,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import streamlit as st
 from agents.orchestrator import ask, decide_route
-from agents.rag_agent import answer_from_docs, answer_from_docs_stream
-from agents.web_agent import search_web_stream, get_remaining_searches
+from agents.rag_agent import answer_from_docs, answer_from_docs_stream, search_documents, score_rag_confidence
+from agents.web_agent import search_web_stream, get_remaining_searches, score_web_confidence
+from tavily import TavilyClient
+from dotenv import load_dotenv
+load_dotenv()
 from agents.sql_agent import ask as sql_ask
 import io
 
@@ -122,7 +125,7 @@ if prompt := st.chat_input("Ask a question..."):
         st.caption(f"Routed to: {route} Agent")
 
         if route == "SQL":
-            from agents.sql_agent import get_conn, generate_sql, run_sql, explain_results_stream
+            from agents.sql_agent import get_conn, generate_sql, run_sql, explain_results_stream, score_sql_confidence
             conn = get_conn()
             schema = """
             orders(orderID, customerID, employeeID, orderDate, requiredDate, shippedDate, shipVia, freight, shipName, shipAddress, shipCity, shipRegion, shipPostalCode, shipCountry)
@@ -137,6 +140,9 @@ if prompt := st.chat_input("Ask a question..."):
             st.code(sql, language="sql")
 
             result, error = run_sql(conn, sql)
+            confidence = score_sql_confidence(result, error)
+            st.caption(f"Confidence: {confidence}")
+
             if error:
                 answer = f"Error running query: {error}"
                 st.error(answer)
@@ -146,12 +152,19 @@ if prompt := st.chat_input("Ask a question..."):
                 answer = st.write_stream(explain_results_stream(prompt, sql, result.to_string(index=False), history=history))
 
         elif route == "RAG":
+            chunks, _ = search_documents(prompt)
+            confidence = score_rag_confidence(chunks)
+            st.caption(f"Confidence: {confidence}")
             answer = st.write_stream(answer_from_docs_stream(prompt, history=history))
 
         elif route == "WEB":
             with st.spinner("Searching the web..."):
-                pass
-            answer = st.write_stream(search_web_stream(prompt, history=history))
+                tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
+                web_results = tavily_client.search(query=prompt, max_results=5)
+                sources = web_results.get("results", [])
+                confidence = score_web_confidence(sources)
+            st.caption(f"Confidence: {confidence}")
+            answer = st.write_stream(search_web_stream(prompt, history=history, prefetched_sources=sources))
 
         else:  # NEITHER
             answer = (

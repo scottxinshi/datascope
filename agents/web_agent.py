@@ -50,6 +50,14 @@ def get_remaining_searches():
     return max(0, MONTHLY_LIMIT - usage["count"])
 
 
+def score_web_confidence(sources):
+    """Score confidence based on number of Tavily sources returned."""
+    if len(sources) == 0:
+        return "🔴 Low"      # no sources found
+    if len(sources) <= 2:
+        return "🟡 Medium"   # few sources
+    return "🟢 High"         # multiple sources
+
 def search_web(question, history=[]):
     if not check_and_increment():
         ...  # unchanged
@@ -83,8 +91,9 @@ Always cite your sources by mentioning the URL. Keep the answer concise and fact
         return f"Web search failed: {str(e)}"
 
 
-def search_web_stream(question, history=[]):
-    """Streaming version of search_web — yields tokens as they arrive."""
+def search_web_stream(question, history=[], prefetched_sources=None):
+    """Streaming version of search_web — yields tokens as they arrive.
+    Accepts prefetched_sources to avoid double Tavily API call when confidence scoring."""
     if not check_and_increment():
         yield (
             f"Monthly web search limit of {MONTHLY_LIMIT} reached. "
@@ -94,8 +103,11 @@ def search_web_stream(question, history=[]):
         return
 
     try:
-        results = tavily.search(query=question, max_results=5)
-        sources = results.get("results", [])
+        if prefetched_sources is not None:
+            sources = prefetched_sources
+        else:
+            results = tavily.search(query=question, max_results=5)
+            sources = results.get("results", [])
 
         context = ""
         for i, source in enumerate(sources):

@@ -77,6 +77,15 @@ def run_sql(conn, sql):
         return result, None
     except Exception as e:
         return None, str(e)
+
+# Confidence scoring based on query execution result
+# No extra LLM call needed — purely based on observable signals
+def score_sql_confidence(result, error):
+    if error:
+        return "🔴 Low"       # query failed
+    if result.empty:
+        return "🟡 Medium"    # query ran but no data matched
+    return "🟢 High"          # query ran and returned results
     
 # Added Explain Results so explain it in plain English
 
