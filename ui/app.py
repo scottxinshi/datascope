@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 from agents.sql_agent import ask as sql_ask
 import io
+import time
 
 # Page setup
 st.set_page_config(page_title="DataScope", page_icon="🔍", layout="centered")
@@ -119,6 +120,7 @@ if prompt := st.chat_input("Ask a question..."):
         history = st.session_state.messages[-6:] if st.session_state.messages else []
 
         # Spinner covers only the routing decision
+        start_time = time.time()
         with st.spinner("Thinking..."):
             route = decide_route(prompt)
 
@@ -172,5 +174,8 @@ if prompt := st.chat_input("Ask a question..."):
                 "Try asking about orders, customers, products, company policies, or current events."
             )
             st.markdown(answer)
+
+        elapsed = time.time() - start_time
+        st.caption(f"⏱ Answered in {elapsed:.1f}s")
 
     st.session_state.messages.append({"role": "assistant", "content": answer})
