@@ -13,9 +13,43 @@ from agents.sql_agent import ask as sql_ask
 import io
 import time
 
+
+def try_render_chart(df):
+    """Auto-detect chart type from SQL result and render it."""
+    if df is None or df.empty or len(df) < 2:
+        return
+    numeric_cols = df.select_dtypes(include='number').columns.tolist()
+    if not numeric_cols:
+        return
+
+    year_cols = [c for c in df.columns if 'year' in c.lower()]
+    cat_cols = [c for c in df.columns if c in [
+        'category', 'experience_level', 'employment_type',
+        'company_location', 'country', 'remote_ratio'
+    ]]
+
+    if year_cols:
+        idx = year_cols[0]
+        value_cols = [c for c in numeric_cols if c != idx]  # exclude index col
+        if not value_cols:
+            return
+        # category + year + one value → pivot into multi-line chart
+        if cat_cols and len(value_cols) == 1:
+            try:
+                pivot = df.pivot(index=idx, columns=cat_cols[0], values=value_cols[0])
+                st.line_chart(pivot)
+                return
+            except Exception:
+                pass
+        st.line_chart(df.set_index(idx)[value_cols])
+    elif cat_cols and numeric_cols:
+        st.bar_chart(df.set_index(cat_cols[0])[numeric_cols[:1]])
+    elif len(df.columns) == 2 and len(numeric_cols) == 1:
+        st.bar_chart(df.set_index(df.columns[0])[numeric_cols])
+
 # Page setup
 st.set_page_config(page_title="DataScope", page_icon="🔍", layout="centered")
-st.title("🔍 DataScope")
+st.title("DataScope")
 st.caption("Built by Scott Xin Shi")
 
 # Custom CSS that works for BOTH Light and Dark themes
@@ -48,7 +82,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 with st.sidebar:
-    st.markdown("### 👋 About")
+    st.markdown("### About")
 
     st.markdown("""
     <div class="sidebar-card">
@@ -161,6 +195,7 @@ if prompt := st.chat_input("Ask a question..."):
                 st.error(answer)
             else:
                 st.dataframe(result)
+                try_render_chart(result)
                 st.markdown("**Insight:**")
                 answer = st.write_stream(explain_results_stream(prompt, sql, result.to_string(index=False), history=history))
 
