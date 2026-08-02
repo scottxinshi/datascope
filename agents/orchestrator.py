@@ -36,8 +36,11 @@ def decide_route(question: str) -> str:
             {
                 "role": "system",
                 "content": """You are a routing assistant.
-- SQL: questions needing data aggregation, counts, filters on orders,
-  customers, revenue, quantities, prices
+- SQL: questions needing data aggregation, counts, filters on:
+  * orders, customers, revenue, quantities, prices (business data)
+  * job salaries, which profession/role earns the most, salary by experience level,
+    salary trends by year, job category comparisons, remote work stats,
+    Data Scientist vs Data Engineer vs Data Analyst vs ML Engineer vs AI Engineer
 - RAG: questions about policies, rules, shipping times, returns,
   product labels, certifications, guides
 - WEB: questions about current events, news, general knowledge,
@@ -48,8 +51,7 @@ Reply with ONLY one word: SQL, RAG, WEB, or NEITHER.
 
 Key rule: if the question asks about a product ATTRIBUTE or LABEL
 (like gluten-free, organic), route to RAG.
-
-Reply with ONLY one word: SQL, RAG, or NEITHER."""
+Key rule: if the question asks about job salaries, job market, or data roles, route to SQL."""
             },
             {"role": "user", "content": question}
         ]

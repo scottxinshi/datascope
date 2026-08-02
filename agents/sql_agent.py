@@ -26,6 +26,8 @@ def load_data():
     conn.execute(f"CREATE TABLE employees AS SELECT * FROM read_csv_auto('{BASE_DIR}/data/employees.csv')")
     conn.execute(f"CREATE TABLE suppliers AS SELECT * FROM read_csv_auto('{BASE_DIR}/data/suppliers.csv')")
     conn.execute(f"CREATE TABLE order_details AS SELECT * FROM read_csv_auto('{BASE_DIR}/data/order_details.csv')")
+    # Job market data: 66,527 salary records (2023-2025), US & Canada only
+    conn.execute(f"CREATE TABLE jobs AS SELECT * FROM read_csv_auto('{BASE_DIR}/data/jobs.csv')")
     return conn
 
 # Singleton connection — load CSV data once at module startup, reuse for all calls
@@ -140,12 +142,23 @@ def ask(question, silent=False):
     conn = get_conn()
     
     schema = """
+    -- Northwind business tables
     orders(orderID, customerID, employeeID, orderDate, requiredDate, shippedDate, shipVia, freight, shipName, shipAddress, shipCity, shipRegion, shipPostalCode, shipCountry)
     products(productID, productName, supplierID, categoryID, quantityPerUnit, unitPrice, unitsInStock, unitsOnOrder, reorderLevel, discontinued)
     customers(customerID, companyName, contactName, contactTitle, address, city, region, postalCode, country, phone, fax)
     employees(employeeID, lastName, firstName, title, titleOfCourtesy, birthDate, hireDate, city, region, country, reportsTo)
     suppliers(supplierID, companyName, contactName, contactTitle, city, region, country, phone)
     order_details(orderID, productID, unitPrice, quantity, discount)
+
+    -- Data industry job market (aijobs.net, 2023-2025, US & Canada, 66,527 rows)
+    -- Use salary_in_usd for all salary comparisons (already converted to USD)
+    -- experience_level: EN=Entry, MI=Mid, SE=Senior, EX=Executive
+    -- employment_type: FT=Full-time, CT=Contract, PT=Part-time, FL=Freelance
+    -- remote_ratio: 0=On-site, 50=Hybrid, 100=Fully Remote
+    -- company_location: US or CA (ISO country code)
+    -- category values: 'Data Scientist', 'Data Engineer', 'Data Analyst', 'ML Engineer', 'AI Engineer'
+    jobs(work_year, experience_level, employment_type, job_title, salary, salary_currency,
+         salary_in_usd, employee_residence, remote_ratio, company_location, company_size, category)
     """
     
     if not silent:
@@ -173,7 +186,7 @@ def ask(question, silent=False):
         if result.empty:
             if not silent:
                 print("No results found.")
-            return "I don't have data to answer that question. The query returned no results — try asking about orders, customers, or products in the database."
+            return "I don't have data to answer that question. The query returned no results — try asking about orders, customers, products, or job market salaries."
         
         if not silent:
             print(f"\nResult:")
