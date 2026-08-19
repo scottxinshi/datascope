@@ -7,6 +7,10 @@ from groq import Groq
 load_dotenv()
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+# Model is env-configurable so a provider deprecation is a .env change, not a code change.
+# Groq decommissioned llama-3.3-70b-versatile on 2026-08-16.
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 embedding_fn = embedding_functions.DefaultEmbeddingFunction()
 
 # chroma_client = chromadb.PersistentClient(path="chroma_db")
@@ -54,7 +58,7 @@ If the answer is not in the context, say 'I don't have that information in my do
         "content": f"Context:\n{context}\n\nQuestion: {question}"
     })
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model=GROQ_MODEL,
         messages=messages
     )
     return response.choices[0].message.content.strip()
@@ -81,7 +85,7 @@ If the answer is not in the context, say 'I don't have that information in my do
         "content": f"Context:\n{context}\n\nQuestion: {question}"
     })
     stream = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model=GROQ_MODEL,
         messages=messages,
         stream=True
     )
