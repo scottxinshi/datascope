@@ -8,6 +8,10 @@ load_dotenv()
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
+# Model is env-configurable so a provider deprecation is a .env change, not a code change.
+# Groq decommissioned llama-3.3-70b-versatile on 2026-08-16.
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+
 # Load CSV files into DuckDB as tables
 
 # relative path fixed on 2026-05-04
@@ -44,7 +48,7 @@ def get_conn():
 # Ask the LLM to generate SQL for a question
 def generate_sql(question, schema):
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model=GROQ_MODEL,
         messages=[
             {
                 "role": "system",
@@ -104,7 +108,7 @@ def explain_results(question, sql, results, history=[]):
         "content": f"Question asked: {question}\n\nSQL that was run: {sql}\n\nResults: {results}\n\nPlease explain these results clearly."
     })
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model=GROQ_MODEL,
         messages=messages
     )
     return response.choices[0].message.content.strip()
@@ -125,7 +129,7 @@ def explain_results_stream(question, sql, results, history=[]):
         "content": f"Question asked: {question}\n\nSQL that was run: {sql}\n\nResults: {results}\n\nPlease explain these results clearly."
     })
     stream = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model=GROQ_MODEL,
         messages=messages,
         stream=True
     )

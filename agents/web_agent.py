@@ -8,6 +8,10 @@ from groq import Groq
 load_dotenv()
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+# Model is env-configurable so a provider deprecation is a .env change, not a code change.
+# Groq decommissioned llama-3.3-70b-versatile on 2026-08-16.
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 tavily = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -81,7 +85,7 @@ Always cite your sources by mentioning the URL. Keep the answer concise and fact
             "content": f"Search results:\n{context}\n\nQuestion: {question}"
         })
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model=GROQ_MODEL,
             messages=messages
         )
         return response.choices[0].message.content.strip()
@@ -127,7 +131,7 @@ Always cite your sources by mentioning the URL. Keep the answer concise and fact
         })
 
         stream = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model=GROQ_MODEL,
             messages=messages,
             stream=True
         )

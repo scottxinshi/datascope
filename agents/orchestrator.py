@@ -14,6 +14,10 @@ from llmops.tracker import track_llm_call
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
+# Model is env-configurable so a provider deprecation is a .env change, not a code change.
+# Groq decommissioned llama-3.3-70b-versatile on 2026-08-16.
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+
 
 # ── 1. State ──────────────────────────────────────────────────────────────────
 # This dictionary flows through every node in the graph.
@@ -31,7 +35,7 @@ class AgentState(TypedDict):
 def decide_route(question: str) -> str:
     """Return 'SQL', 'RAG', or 'NEITHER' for a given question."""
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model=GROQ_MODEL,
         messages=[
             {
                 "role": "system",
